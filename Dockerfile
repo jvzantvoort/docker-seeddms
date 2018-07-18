@@ -1,22 +1,40 @@
-FROM php:7.0-apache
+FROM php:7.2-apache
 MAINTAINER Ludwig Prager <ludwig.prager@celp.de>
 
-RUN apt-get update
+RUN apt-get update && apt-get install -y \
+        --no-install-recommends \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libmcrypt-dev \
+        libpng-dev \
+        libpng-dev \
+        imagemagick \
+        poppler-utils \
+        catdoc \
+        id3 \
+        html2text \
+        a2ps \
+        gnumeric
 
-RUN apt-get install -q -y libpng12-dev imagemagick
+# unoconv ommitted, creates a 600MiB increase
 
-RUN docker-php-ext-install gd
+RUN docker-php-ext-install gd 
 
-RUN apt-get install -q -y php-pear  php5-gd php5-sqlite poppler-utils catdoc
+RUN php -m | grep -q sqlite \
+    || ( \
+      apt-get install -y libsqlite3-dev && \
+      docker-php-ext-install pdo_sqlite \
+    )
 
-ADD misc/seeddms-quickstart-5.0.5.tar.gz /var/www/
+ADD misc/seeddms-quickstart-5.1.8.tar.gz /var/www/
 
 RUN a2enmod rewrite
 
 COPY misc/php.ini /usr/local/etc/php/
 COPY misc/000-default.conf /etc/apache2/sites-available/
 
-COPY misc/settings.xml /var/www/seeddms50x/seeddms-5.0.5/conf/settings.xml
-RUN chown -R www-data:www-data /var/www/seeddms50x/
+COPY misc/settings.xml /var/www/seeddms51x/conf/settings.xml
 
-RUN touch /var/www/seeddms50x/seeddms-5.0.5/conf/ENABLE_INSTALL_TOOL
+RUN chown -R www-data:www-data /var/www/seeddms51x/
+
+RUN touch /var/www/seeddms51x/conf/ENABLE_INSTALL_TOOL
